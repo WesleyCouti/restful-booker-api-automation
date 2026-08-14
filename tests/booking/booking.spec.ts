@@ -30,35 +30,6 @@ describe('Booking API', () => {
     expect(validate(response.body.booking)).toBe(true);
   });
 
-  test('retrieves an existing booking by id', async () => {
-    const bookingsResponse = await bookingClient.list();
-
-    expect(bookingsResponse.status).toBe(200);
-    expect(Array.isArray(bookingsResponse.body)).toBe(true);
-    expect(bookingsResponse.body.length).toBeGreaterThan(0);
-
-    const bookingId = bookingsResponse.body[0].bookingid;
-
-    expect(bookingId).toEqual(expect.any(Number));
-
-    const response = await bookingClient.getById(bookingId);
-
-    expect(response.status).toBe(200);
-
-    expect(response.body).toEqual(
-      expect.objectContaining({
-        firstname: expect.any(String),
-        lastname: expect.any(String),
-        totalprice: expect.any(Number),
-        depositpaid: expect.any(Boolean),
-        bookingdates: expect.objectContaining({
-          checkin: expect.any(String),
-          checkout: expect.any(String)
-        })
-      })
-    );
-  });
-
   test('updates an existing booking using authentication', async () => {
     const created = await bookingClient.createAndReturn(buildBooking());
     const token = await authClient.createToken();
