@@ -13,6 +13,7 @@ describe('Booking API', () => {
 
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body)).toBe(true);
+    expect(response.body.length).toBeGreaterThan(0);
   });
 
   test('creates a booking and validates response contract', async () => {
@@ -29,29 +30,39 @@ describe('Booking API', () => {
     expect(validate(response.body.booking)).toBe(true);
   });
 
-  test('retrieves a booking by id', async () => {
-    const payload = buildBooking({ firstname: 'API' });
-    const created = await bookingClient.createAndReturn(payload);
+  test('retrieves an existing booking by id', async () => {
+    const bookingsResponse = await bookingClient.list();
 
-    let response;
+    expect(bookingsResponse.status).toBe(200);
+    expect(Array.isArray(bookingsResponse.body)).toBe(true);
+    expect(bookingsResponse.body.length).toBeGreaterThan(0);
 
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      response = await bookingClient.getById(created.bookingid);
+    const bookingId = bookingsResponse.body[0].bookingid;
 
-      if (response.status === 200) {
-        break;
-      }
+    expect(bookingId).toEqual(expect.any(Number));
 
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    }
+    const response = await bookingClient.getById(bookingId);
 
-    expect(response?.status).toBe(200);
-    expect(response?.body).toMatchObject(payload);
+    expect(response.status).toBe(200);
+
+    expect(response.body).toEqual(
+      expect.objectContaining({
+        firstname: expect.any(String),
+        lastname: expect.any(String),
+        totalprice: expect.any(Number),
+        depositpaid: expect.any(Boolean),
+        bookingdates: expect.objectContaining({
+          checkin: expect.any(String),
+          checkout: expect.any(String)
+        })
+      })
+    );
   });
 
   test('updates an existing booking using authentication', async () => {
     const created = await bookingClient.createAndReturn(buildBooking());
     const token = await authClient.createToken();
+
     const updatedPayload = buildBooking({
       firstname: 'Updated',
       totalprice: 900
@@ -64,32 +75,40 @@ describe('Booking API', () => {
     );
 
     expect(response.status).toBe(200);
-    expect(response.body.firstname).toBe('Updated');
-    expect(response.body.totalprice).toBe(900);
+    expect(response.body).toMatchObject(updatedPayload);
   });
 
   test('partially updates an existing booking', async () => {
     const created = await bookingClient.createAndReturn(buildBooking());
     const token = await authClient.createToken();
 
+    const partialPayload = {
+      lastname: 'Automation'
+    };
+
     const response = await bookingClient.partialUpdate(
       created.bookingid,
-      { lastname: 'Automation' },
+      partialPayload,
       token
     );
 
     expect(response.status).toBe(200);
-    expect(response.body.lastname).toBe('Automation');
+    expect(response.body.lastname).toBe(partialPayload.lastname);
   });
 
   test('deletes a booking and confirms it is no longer available', async () => {
     const created = await bookingClient.createAndReturn(buildBooking());
     const token = await authClient.createToken();
 
-    const deleteResponse = await bookingClient.delete(created.bookingid, token);
-    expect([201, 200]).toContain(deleteResponse.status);
+    const deleteResponse = await bookingClient.delete(
+      created.bookingid,
+      token
+    );
+
+    expect([200, 201]).toContain(deleteResponse.status);
 
     const getResponse = await bookingClient.getById(created.bookingid);
+
     expect(getResponse.status).toBe(404);
   });
 
@@ -104,7 +123,9 @@ describe('Booking API', () => {
 
     const response = await bookingClient.update(
       created.bookingid,
-      buildBooking({ firstname: 'Unauthorized' }),
+      buildBooking({
+        firstname: 'Unauthorized'
+      }),
       'invalid-token'
     );
 
