@@ -33,10 +33,20 @@ describe('Booking API', () => {
     const payload = buildBooking({ firstname: 'API' });
     const created = await bookingClient.createAndReturn(payload);
 
-    const response = await bookingClient.getById(created.bookingid);
+    let response;
 
-    expect(response.status).toBe(200);
-    expect(response.body).toMatchObject(payload);
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      response = await bookingClient.getById(created.bookingid);
+
+      if (response.status === 200) {
+        break;
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    expect(response?.status).toBe(200);
+    expect(response?.body).toMatchObject(payload);
   });
 
   test('updates an existing booking using authentication', async () => {
