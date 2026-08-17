@@ -16,3 +16,7 @@ export interface CreatedBooking {
   bookingid: number;
   booking: Booking;
 }
+
+export type BookingUpdate = Booking;
+
+export type PartialBookingUpdate = Partial<Booking>;
