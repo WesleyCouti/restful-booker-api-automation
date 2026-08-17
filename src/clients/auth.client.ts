@@ -1,20 +1,48 @@
-import request from 'supertest';
+import request, { Response } from 'supertest';
 import { environment } from '../config/environment';
 
-export class AuthClient {
-  async createToken(): Promise<string> {
-    const response = await request(environment.baseUrl)
-      .post('/auth')
-      .send({
-        username: environment.username,
-        password: environment.password
-      })
-      .expect(200);
+interface AuthResponse {
+  token?: string;
+  reason?: string;
+}
 
-    if (!response.body.token) {
-      throw new Error('Authentication token was not returned by the API.');
+export class AuthClient {
+  private readonly baseUrl = environment.baseUrl;
+
+  async authenticate(
+    username: string,
+    password: string
+  ): Promise<Response> {
+    return request(this.baseUrl)
+      .post('/auth')
+      .set('Accept', 'application/json')
+      .set('Content-Type', 'application/json')
+      .send({
+        username,
+        password
+      });
+  }
+
+  async createToken(): Promise<string> {
+    const response = await this.authenticate(
+      environment.username,
+      environment.password
+    );
+
+    if (response.status !== 200) {
+      throw new Error(
+        `Authentication failed. Expected status 200, received ${response.status}.`
+      );
     }
 
-    return response.body.token as string;
+    const body = response.body as AuthResponse;
+
+    if (!body.token) {
+      throw new Error(
+        'Authentication succeeded but no token was returned by the API.'
+      );
+    }
+
+    return body.token;
   }
 }
