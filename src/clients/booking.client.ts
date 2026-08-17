@@ -1,27 +1,39 @@
-import request from 'supertest';
+import request, { Response } from 'supertest';
 import { environment } from '../config/environment';
 import type { Booking, CreatedBooking } from '../types/booking';
 
 export class BookingClient {
-  async list() {
-    return request(environment.baseUrl).get('/booking');
+  private readonly baseUrl = environment.baseUrl;
+
+  async list(): Promise<Response> {
+    return request(this.baseUrl)
+      .get('/booking')
+      .set('Accept', 'application/json');
   }
 
-  async getById(id: number) {
-    return request(environment.baseUrl).get(`/booking/${id}`);
+  async getById(id: number): Promise<Response> {
+    return request(this.baseUrl)
+      .get(`/booking/${id}`)
+      .set('Accept', 'application/json');
   }
 
-  async create(payload: Booking) {
-    return request(environment.baseUrl)
+  async create(payload: Booking): Promise<Response> {
+    return request(this.baseUrl)
       .post('/booking')
       .set('Accept', 'application/json')
+      .set('Content-Type', 'application/json')
       .send(payload);
   }
 
-  async update(id: number, payload: Booking, token: string) {
-    return request(environment.baseUrl)
+  async update(
+    id: number,
+    payload: Booking,
+    token: string
+  ): Promise<Response> {
+    return request(this.baseUrl)
       .put(`/booking/${id}`)
       .set('Accept', 'application/json')
+      .set('Content-Type', 'application/json')
       .set('Cookie', `token=${token}`)
       .send(payload);
   }
@@ -30,17 +42,19 @@ export class BookingClient {
     id: number,
     payload: Partial<Booking>,
     token: string
-  ) {
-    return request(environment.baseUrl)
+  ): Promise<Response> {
+    return request(this.baseUrl)
       .patch(`/booking/${id}`)
       .set('Accept', 'application/json')
+      .set('Content-Type', 'application/json')
       .set('Cookie', `token=${token}`)
       .send(payload);
   }
 
-  async delete(id: number, token: string) {
-    return request(environment.baseUrl)
+  async delete(id: number, token: string): Promise<Response> {
+    return request(this.baseUrl)
       .delete(`/booking/${id}`)
+      .set('Accept', 'application/json')
       .set('Cookie', `token=${token}`);
   }
 
@@ -48,7 +62,9 @@ export class BookingClient {
     const response = await this.create(payload);
 
     if (response.status !== 200) {
-      throw new Error(`Booking creation failed with status ${response.status}.`);
+      throw new Error(
+        `Unable to create booking. Expected status 200, received ${response.status}.`
+      );
     }
 
     return response.body as CreatedBooking;
