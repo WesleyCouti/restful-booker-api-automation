@@ -2,12 +2,13 @@
   "name": "restful-booker-api-automation",
   "version": "1.0.0",
   "private": true,
-  "description": "API test automation portfolio project using Jest, SuperTest and TypeScript.",
+  "description": "REST API test automation framework using TypeScript, Jest, SuperTest, JSON Schema validation and GitHub Actions.",
   "scripts": {
     "test": "jest --runInBand",
     "test:smoke": "jest --runInBand --testNamePattern=smoke",
     "test:regression": "jest --runInBand",
     "test:coverage": "jest --runInBand --coverage",
+    "test:ci": "jest --runInBand --coverage",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
