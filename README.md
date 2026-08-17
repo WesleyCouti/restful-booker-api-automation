@@ -2,9 +2,11 @@
 
 [![API Tests](https://github.com/WesleyCouti/restful-booker-api-automation/actions/workflows/api-tests.yml/badge.svg)](https://github.com/WesleyCouti/restful-booker-api-automation/actions/workflows/api-tests.yml)
 
-API test automation framework built with **TypeScript, Jest and SuperTest**, focused on REST API validation, maintainability, reusable HTTP clients, contract testing and continuous integration.
+API test automation framework built with **TypeScript, Jest and SuperTest**, focused on REST API validation, maintainability, reusable HTTP clients, contract testing, defensive validation and continuous integration.
 
-This project is part of my QA Automation portfolio and demonstrates practical approaches to structuring automated API tests while keeping test scenarios, HTTP communication, test data and response contracts separated.
+This project is part of my **QA Automation portfolio** and demonstrates how I structure an API automation framework by separating test scenarios, HTTP communication, test data, contracts and configuration.
+
+The project currently contains **12 automated tests across 3 test suites**, with **100% code coverage** for statements, branches, functions and lines.
 
 ---
 
@@ -19,12 +21,42 @@ This project is part of my QA Automation portfolio and demonstrates practical ap
 - GitHub Actions
 - REST API Testing
 - Contract Testing
+- Test Data Factory
+- CI/CD
+
+---
+
+## Current Quality Status
+
+| Metric | Result |
+|---|---:|
+| Test Suites | 3 / 3 ✅ |
+| Automated Tests | 12 / 12 ✅ |
+| Statements Coverage | 100% |
+| Branch Coverage | 100% |
+| Functions Coverage | 100% |
+| Lines Coverage | 100% |
+| TypeScript Validation | ✅ Passing |
+| Coverage Quality Gate | ✅ Passing |
+| CI Pipeline | ✅ Passing |
+
+Latest validated coverage execution:
+
+```text
+Test Suites: 3 passed, 3 total
+Tests:       12 passed, 12 total
+
+Statements : 100% (30/30)
+Branches   : 100% (4/4)
+Functions  : 100% (10/10)
+Lines      : 100% (30/30)
+```
 
 ---
 
 ## Test Coverage
 
-The automated suite covers authentication, CRUD operations, contract validation and negative scenarios against the public **RESTful Booker API**.
+The automated suite covers authentication, CRUD operations, contract validation, negative scenarios and defensive behavior of the API clients.
 
 ### Authentication
 
@@ -43,6 +75,18 @@ The automated suite covers authentication, CRUD operations, contract validation 
 - Validate non-existent resource response
 - Validate unauthorized update attempt
 
+### Client Guard Tests
+
+The framework also contains unit-level tests for defensive behavior inside the API clients.
+
+Covered scenarios include:
+
+- Authentication returning an unexpected HTTP status
+- Authentication response without a token
+- Booking creation returning an unexpected HTTP status
+
+These tests validate framework behavior itself, not only the external API.
+
 ---
 
 ## Test Architecture
@@ -50,45 +94,51 @@ The automated suite covers authentication, CRUD operations, contract validation 
 The framework separates test scenarios from HTTP communication, test data generation, schemas and application configuration.
 
 ```text
-                     Automated API Tests
-                             │
-                 ┌───────────┴───────────┐
-                 │                       │
-          Authentication              Booking
-              Tests                    Tests
-                 │                       │
-                 └───────────┬───────────┘
-                             │
-                             ▼
-                       API Clients
-                    ┌────────┴────────┐
-                    │                 │
-               Auth Client       Booking Client
-                    │                 │
-                    └────────┬────────┘
-                             │
-               ┌─────────────┼─────────────┐
-               │             │             │
-               ▼             ▼             ▼
-          Test Data        Types       JSON Schema
-           Factory                       + Ajv
-               │             │             │
-               └─────────────┼─────────────┘
-                             │
-                             ▼
-                         SuperTest
-                             │
-                             ▼
-                    RESTful Booker API
-                             │
-                             ▼
-                     Jest Test Runner
-                             │
-                             ▼
-                     GitHub Actions
+                         Automated Tests
+                               │
+              ┌────────────────┼────────────────┐
+              │                │                │
+              ▼                ▼                ▼
+       Authentication       Booking        Client Guard
+           Tests             Tests             Tests
+              │                │                │
+              └────────────────┼────────────────┘
+                               │
+                               ▼
+                          API Clients
+                    ┌──────────┴──────────┐
+                    │                     │
+                    ▼                     ▼
+               Auth Client          Booking Client
+                    │                     │
+                    └──────────┬──────────┘
+                               │
+              ┌────────────────┼────────────────┐
+              │                │                │
+              ▼                ▼                ▼
+          Test Data           Types         JSON Schema
+           Factory                            + Ajv
+              │                │                │
+              └────────────────┼────────────────┘
+                               │
+                               ▼
+                           SuperTest
+                               │
+                               ▼
+                      RESTful Booker API
+                               │
+                               ▼
+                             Jest
+                               │
+                               ▼
+                        GitHub Actions
+                               │
+                  ┌────────────┴────────────┐
+                  ▼                         ▼
+             Quality Gate             Coverage Report
 ```
 
-This architecture keeps HTTP implementation details outside the test scenarios and makes common API operations reusable across the suite.
+This architecture keeps HTTP implementation details outside the functional scenarios, improves reuse and allows both the API behavior and framework internals to be tested independently.
 
 ---
 
@@ -99,15 +149,27 @@ restful-booker-api-automation/
 ├── .github/
 │   └── workflows/
 │       └── api-tests.yml
+│
 ├── src/
 │   ├── clients/
+│   │   ├── auth.client.ts
+│   │   └── booking.client.ts
 │   ├── config/
 │   ├── data/
+│   │   └── booking.factory.ts
 │   ├── schemas/
+│   │   └── booking.schema.ts
 │   └── types/
+│       └── booking.ts
+│
 ├── tests/
 │   ├── auth/
-│   └── booking/
+│   │   └── auth.spec.ts
+│   ├── booking/
+│   │   └── booking.spec.ts
+│   └── unit/
+│       └── client-guards.spec.ts
+│
 ├── .env.example
 ├── .gitignore
 ├── jest.config.ts
@@ -122,30 +184,42 @@ restful-booker-api-automation/
 |---|---|
 | `src/clients/` | HTTP clients and reusable API operations |
 | `src/config/` | Environment and API configuration |
-| `src/data/` | Test data factories |
+| `src/data/` | Reusable test data factories |
 | `src/schemas/` | JSON Schemas used for contract validation |
 | `src/types/` | TypeScript interfaces and API models |
 | `tests/auth/` | Authentication scenarios |
 | `tests/booking/` | Booking API scenarios |
+| `tests/unit/` | Defensive behavior and client guard tests |
 | `.github/workflows/` | Continuous integration pipeline |
 
 ---
 
 ## Test Strategy
 
-The framework was structured around principles commonly used in maintainable API test automation.
+The framework was designed around principles commonly applied to maintainable API test automation.
 
 ### Separation of Responsibilities
 
 Test scenarios describe expected API behavior while HTTP operations are encapsulated inside dedicated clients.
 
-This keeps request implementation details away from assertions and makes API operations reusable.
+This keeps request implementation details away from assertions and makes common operations reusable throughout the suite.
 
 ### Test Data Management
 
-Booking payloads are generated through a factory.
+Booking payloads are generated through a reusable factory.
 
-Individual scenarios can override only the fields relevant to the test while keeping a valid default payload.
+A valid default payload is provided while individual scenarios can override only the fields relevant to their validation.
+
+Example:
+
+```typescript
+const updatedPayload = buildBooking({
+  firstname: 'Updated',
+  totalprice: 900
+});
+```
+
+This avoids duplicating large payload objects throughout the test suite.
 
 ### Test Independence
 
@@ -155,27 +229,57 @@ This reduces dependencies between tests and prevents execution order from becomi
 
 ### Contract Validation
 
-Response validation is not limited to HTTP status codes and individual field values.
+API validation is not limited to HTTP status codes or individual field assertions.
 
-**Ajv + JSON Schema** are used to validate the expected structure and data types of API responses.
+**Ajv + JSON Schema** are used to validate response structure and expected data types.
+
+This provides an additional validation layer capable of detecting unexpected API contract changes.
 
 ### Positive and Negative Testing
 
-The suite includes both successful operations and failure scenarios, including:
+The suite covers both successful operations and failure conditions.
 
+Examples include:
+
+- Valid authentication
 - Invalid authentication
 - Unauthorized update
 - Non-existent resources
+- Unexpected HTTP responses
+- Missing authentication token
 
-### Authentication
+### Defensive Client Validation
 
-Protected operations obtain an authentication token through a dedicated authentication client rather than duplicating authentication logic inside individual tests.
+Reusable clients contain guard clauses for critical operations.
 
-### Continuous Integration
+For example, authentication validates whether the expected token was actually returned before allowing the test flow to continue.
 
-The complete regression suite is executed through GitHub Actions in a clean CI environment.
+These defensive behaviors are covered by dedicated unit tests.
 
-This ensures the automation can be installed and executed independently of a developer's local machine.
+### Static Validation
+
+TypeScript validation runs before the automated suite in CI.
+
+```bash
+npm run typecheck
+```
+
+This allows type-related problems to fail earlier in the pipeline.
+
+### Coverage Quality Gate
+
+Code coverage is part of the automated validation strategy.
+
+The current framework achieves:
+
+```text
+Statements : 100%
+Branches   : 100%
+Functions  : 100%
+Lines      : 100%
+```
+
+Coverage thresholds are enforced by Jest so the pipeline can detect regressions in tested framework code.
 
 ---
 
@@ -185,12 +289,13 @@ This ensures the automation can be installed and executed independently of a dev
 |---|---|---|
 | `POST` | `/auth` | Authentication |
 | `GET` | `/booking` | Booking listing |
-| `POST` | `/booking` | Booking creation + contract validation |
-| `PUT` | `/booking/:id` | Full update with authentication |
-| `PATCH` | `/booking/:id` | Partial update with authentication |
+| `POST` | `/booking` | Booking creation |
+| `POST` | `/booking` | JSON Schema contract validation |
+| `PUT` | `/booking/:id` | Full authenticated update |
+| `PATCH` | `/booking/:id` | Partial authenticated update |
 | `DELETE` | `/booking/:id` | Resource deletion |
 | `GET` | Non-existent booking | Negative validation |
-| `PUT` | Booking without valid authentication | Authorization validation |
+| `PUT` | Booking with invalid authentication | Authorization validation |
 
 ---
 
@@ -245,31 +350,31 @@ Sensitive credentials should not be committed to the repository.
 
 ## Running the Tests
 
-Run the complete test suite:
+### Complete suite
 
 ```bash
 npm test
 ```
 
-Run smoke tests:
+### Smoke tests
 
 ```bash
 npm run test:smoke
 ```
 
-Run regression tests:
+### Regression suite
 
 ```bash
 npm run test:regression
 ```
 
-Run TypeScript validation:
+### TypeScript validation
 
 ```bash
 npm run typecheck
 ```
 
-Generate test coverage:
+### Tests with coverage
 
 ```bash
 npm run test:coverage
@@ -279,56 +384,78 @@ npm run test:coverage
 
 ## CI/CD Pipeline
 
-The project uses **GitHub Actions** to automatically validate the API automation framework.
+The project uses **GitHub Actions** to continuously validate the automation framework.
 
 ```text
-Checkout repository
-        ↓
-Setup Node.js
-        ↓
-Install dependencies
-        ↓
-TypeScript validation
-        ↓
-Run API regression tests
-        ↓
-Generate test coverage
-        ↓
-Upload coverage artifact
+              Push / Pull Request
+                       │
+                       ▼
+              Checkout Repository
+                       │
+                       ▼
+                 Setup Node.js
+                       │
+                       ▼
+              Install Dependencies
+                       │
+                       ▼
+              TypeScript Validation
+                       │
+                       ▼
+              API Regression Suite
+                       │
+                       ▼
+             Coverage Quality Gate
+                       │
+              ┌────────┴────────┐
+              │                 │
+              ▼                 ▼
+        Coverage Pass      Coverage Failure
+              │                 │
+              ▼                 ▼
+       Upload Artifact     Pipeline Failure
 ```
 
-The workflow is executed automatically for relevant repository changes and can also be manually triggered through the **Actions** tab.
+The workflow validates the project automatically when relevant repository changes are submitted.
+
+It can also be manually triggered through the **Actions** tab using `workflow_dispatch`.
 
 The current pipeline status is displayed by the badge at the top of this README.
 
 ---
 
-## Test Coverage Report
+## Coverage Report
 
-Jest coverage is generated through:
+Jest generates the code coverage report during CI execution.
+
+Current validated results:
+
+| Coverage | Result |
+|---|---:|
+| Statements | **100%** |
+| Branches | **100%** |
+| Functions | **100%** |
+| Lines | **100%** |
+
+Coverage is generated with:
 
 ```bash
 npm run test:coverage
 ```
 
-The report provides visibility into executed code across metrics such as:
+The generated report is uploaded by GitHub Actions as a pipeline artifact for later analysis.
 
-- Statements
-- Branches
-- Functions
-- Lines
-
-In CI, the generated coverage report is uploaded as a GitHub Actions artifact for later analysis.
+The objective of the coverage gate is not simply to maximize a percentage, but to ensure that relevant framework behavior — including error handling and defensive branches — remains validated as the project evolves.
 
 ---
 
-## Applications Under Test
+## Application Under Test
 
 ### RESTful Booker
 
 RESTful Booker is a public API designed for practicing API testing.
 
-The project uses its authentication and booking endpoints to demonstrate automated REST API validation.
+This framework uses its authentication and booking endpoints to demonstrate automated REST API validation.
 
 The application is a public testing environment and is not affiliated with this project.
 
@@ -338,35 +465,60 @@ The application is a public testing environment and is not affiliated with this 
 
 ### Why SuperTest?
 
-SuperTest provides a simple API for performing HTTP requests and validating responses while integrating naturally with JavaScript and TypeScript test environments.
+SuperTest provides a straightforward API for HTTP requests and integrates naturally with JavaScript/TypeScript testing environments.
+
+It allows HTTP communication to remain concise while still providing complete access to response status, headers and body.
 
 ### Why Jest?
 
-Jest provides test organization, assertions, filtering, coverage and a mature test runner suitable for API automation.
+Jest provides test organization, assertions, filtering, mocking and code coverage within the same test runner.
+
+Mocking is particularly useful for validating client guard clauses without depending on the behavior of the external API.
 
 ### Why API Clients?
 
-Dedicated clients encapsulate HTTP operations and prevent request implementation details from being duplicated throughout the test suite.
+Dedicated clients encapsulate HTTP operations such as:
 
-This allows tests to remain focused on expected behavior.
+```text
+Authentication
+Booking creation
+Booking update
+Partial update
+Deletion
+Resource retrieval
+```
+
+This prevents HTTP request implementation from being duplicated across multiple scenarios.
 
 ### Why Test Data Factories?
 
 Factories provide valid default payloads while allowing scenarios to customize only the data relevant to each test.
 
-This reduces duplicated test data and improves maintainability.
+This reduces duplication and improves maintainability.
 
 ### Why JSON Schema?
 
-Functional assertions validate expected values, while JSON Schema provides an additional layer for validating response structure and data types.
+Functional assertions verify expected values while JSON Schema provides an additional layer for validating response structure and data types.
+
+Together, they provide stronger validation than checking status codes alone.
 
 ### Why TypeScript?
 
-TypeScript makes API models and framework contracts explicit and provides static validation before the automated tests are executed.
+TypeScript makes API models and framework contracts explicit and provides static validation before automated tests execute.
+
+### Why Client Guard Tests?
+
+External APIs can return unexpected responses.
+
+Guard clauses allow the framework to fail with meaningful errors rather than continuing execution with invalid state.
+
+Dedicated unit tests verify these defensive paths without intentionally destabilizing the external API.
 
 ### Why GitHub Actions?
 
-Continuous integration provides a repeatable environment for validating the framework and demonstrates that the test suite does not depend exclusively on local configuration.
+Continuous integration provides a clean and repeatable execution environment.
+
+The pipeline demonstrates that the framework can be installed, validated and executed independently of a developer's local configuration.
 
 ---
 
@@ -374,22 +526,23 @@ Continuous integration provides a repeatable environment for validating the fram
 
 This project demonstrates practical experience with:
 
-`API Testing` • `REST` • `Test Automation` • `TypeScript` • `Jest` • `SuperTest` • `CRUD` • `Authentication` • `Positive Testing` • `Negative Testing` • `Contract Testing` • `JSON Schema` • `Test Data Management` • `CI/CD` • `GitHub Actions`
+`API Testing` • `REST` • `Test Automation` • `TypeScript` • `Jest` • `SuperTest` • `CRUD` • `Authentication` • `Positive Testing` • `Negative Testing` • `Contract Testing` • `JSON Schema` • `Ajv` • `Test Data Management` • `API Client Architecture` • `Unit Testing` • `Mocking` • `Code Coverage` • `Quality Gates` • `CI/CD` • `GitHub Actions`
 
 ---
 
 ## Roadmap
 
-Possible next improvements:
+Possible future improvements:
 
 - [ ] Environment-specific configuration
 - [ ] Dedicated HTML test report
 - [ ] Data-driven testing
-- [ ] Additional JSON Schema coverage
+- [ ] Additional JSON Schema contracts
 - [ ] Controlled retry strategy for external API instability
 - [ ] Scheduled smoke test execution
-- [ ] Test execution summary in CI
-- [ ] Additional negative scenarios
+- [ ] Test execution summary directly in GitHub Actions
+- [ ] Response time assertions
+- [ ] Additional negative and boundary scenarios
 
 ---
 
