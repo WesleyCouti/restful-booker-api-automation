@@ -3,13 +3,17 @@ name: API Tests
 on:
   push:
     branches: [main]
+
   pull_request:
     branches: [main]
+
   workflow_dispatch:
 
 jobs:
   api-tests:
+    name: API Regression Suite
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository
@@ -23,16 +27,14 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Type check
+      - name: Run type check
         run: npm run typecheck
 
       - name: Run API regression tests
         run: npm run test:regression
 
-      - name: Generate coverage
-        if: always()
+      - name: Run coverage quality gate
         run: npm run test:coverage
-        continue-on-error: true
 
       - name: Upload coverage report
         if: always()
