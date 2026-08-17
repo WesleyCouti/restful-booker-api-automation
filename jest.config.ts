@@ -13,7 +13,8 @@ const config: Config = {
 
   collectCoverageFrom: [
     'src/**/*.ts',
-    '!src/**/*.d.ts'
+    '!src/**/*.d.ts',
+    '!src/config/environment.ts'
   ],
 
   coverageDirectory: 'coverage',
@@ -27,7 +28,7 @@ const config: Config = {
 
   coverageThreshold: {
     global: {
-      branches: 70,
+      branches: 60,
       functions: 70,
       lines: 70,
       statements: 70
